@@ -1,0 +1,42 @@
+.card {
+  padding: 16px;
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+  border: 1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+
+.title {
+  color: #e6edf3;
+  font-size: 0.9rem;
+}
+
+.label {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.confidence {
+  text-align: right;
+}
+
+.barWrap {
+  width: 100%;
+  background: rgba(148,163,184,0.06);
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.barInner {
+  height: 100%;
+  transition: width 700ms cubic-bezier(.2,.9,.2,1);
+}
+
+.note {
+  margin-top: 10px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
