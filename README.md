@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 # 🩻 AI-Powered Fracture Detection System
 
-An end-to-end AI medical imaging project for detecting bone fractures from X-ray images using Deep Learning.
+An end-to-end AI medical imaging project for detecting bone fractures from X-ray images using Deep Learning and Explainable AI techniques.
 
 The project combines:
 
@@ -9,6 +8,7 @@ The project combines:
 * MobileNetV2 Transfer Learning
 * FastAPI Backend
 * React + TypeScript Frontend
+* Grad-CAM Visualization
 
 ---
 
@@ -21,6 +21,8 @@ The project combines:
 ✅ Upload & Analyze X-ray Images
 ✅ React + FastAPI Integration
 ✅ Deep Learning Transfer Learning Pipeline
+✅ Grad-CAM Heatmap Visualization
+✅ Explainable AI for Medical Imaging
 
 ---
 
@@ -35,12 +37,20 @@ The model was built using:
 
 ## Dataset
 
-Bone Fracture Binary Classification Dataset
+Bone Fracture Multi-Region X-ray Dataset
 
 Classes:
 
 * Fractured
 * Not Fractured
+
+---
+
+# 🔬 Explainability
+
+Grad-CAM visualization is integrated to provide approximate attention maps showing which image regions influenced the model prediction.
+
+This helps improve interpretability and provides visual insight into the model’s decision-making process for medical X-ray analysis.
 
 ---
 
@@ -60,7 +70,7 @@ Classes:
 
 * React
 * TypeScript
-* CSS
+* CSS Modules
 * Axios
 
 ## Backend
@@ -86,6 +96,7 @@ project/
 ├── backend/
 │   ├── main.py
 │   ├── fracture_model.h5
+│   ├── gradcam.py
 │   └── requirements.txt
 │
 └── README.md
@@ -146,7 +157,8 @@ Upload an X-ray image and receive prediction results.
 ```json
 {
   "prediction": "Fractured",
-  "confidence": 96.4
+  "confidence": 96.4,
+  "grad_cam_image": "generated_heatmap.png"
 }
 ```
 
@@ -158,8 +170,9 @@ Upload an X-ray image and receive prediction results.
 2. Image is sent to FastAPI backend
 3. TensorFlow model preprocesses image
 4. MobileNetV2 predicts fracture probability
-5. Prediction & confidence score returned to frontend
-6. Results displayed in dashboard UI
+5. Grad-CAM generates attention heatmap
+6. Prediction & confidence score returned to frontend
+7. Results displayed in dashboard UI
 
 ---
 
@@ -170,6 +183,7 @@ Add screenshots of:
 * Dashboard UI
 * Upload Section
 * Prediction Results
+* Grad-CAM Visualization
 * Confusion Matrix
 
 ---
@@ -178,8 +192,9 @@ Add screenshots of:
 
 * Fine-tuning MobileNetV2
 * EfficientNet implementation
-* Grad-CAM heatmaps
+* Improved Grad-CAM localization
 * Multi-class fracture detection
+* Region-aware fracture analysis
 * Fracture localization
 * Cloud deployment
 
@@ -196,10 +211,7 @@ It is not a certified medical diagnostic tool and should not replace professiona
 # 👨‍💻 Author
 
 Developed by:
-Kerolos Adham  
+Kerolos Adham
 
 GitHub:
 https://github.com/Keroadham112
-=======
-# computer-vision-project
->>>>>>> a903a21 (Added Grad-CAM visualization and UI improvements)
