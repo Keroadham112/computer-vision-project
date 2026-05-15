@@ -192,10 +192,6 @@ Add screenshots of:
 
 * Fine-tuning MobileNetV2
 * EfficientNet implementation
-* Improved Grad-CAM localization
-* Multi-class fracture detection
-* Region-aware fracture analysis
-* Fracture localization
 * Cloud deployment
 
 ---
