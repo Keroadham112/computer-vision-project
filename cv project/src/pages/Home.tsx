@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import ImageUploader from '../components/ImageUploader'
+import PredictionVisuals from '../components/PredictionVisuals'
 import StatusCard from '../components/StatusCard'
 import { predictImage } from '../services/api'
 import type { PredictionResponse } from '../types'
@@ -41,32 +42,85 @@ const Home: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Radiology AI — Fracture Detection</h1>
-            <p className={styles.subtitle}>Upload an X‑ray and receive a quick fracture prediction with confidence.</p>
+        <header className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>AI radiology dashboard</p>
+            <h1 className={styles.title}>Fracture Detection Workspace</h1>
+            <p className={styles.subtitle}>
+              Upload an X-ray, review the model result, and inspect the Grad-CAM overlay in one balanced clinical view.
+            </p>
           </div>
-          <div style={{ color: '#9ca3af', fontSize: 13 }}>Local dev • FastAPI backend</div>
+
+          <div className={styles.heroMeta}>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Backend</span>
+              <strong>FastAPI</strong>
+            </div>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Model</span>
+              <strong>MobileNetV2</strong>
+            </div>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Explainability</span>
+              <strong>Grad-CAM</strong>
+            </div>
+          </div>
         </header>
 
-        <main className={styles.grid}>
-          <section className={styles.leftCard}>
+        <main className={styles.dashboard}>
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <p className={styles.panelKicker}>Step 1</p>
+                <h2 className={styles.panelTitle}>Upload X-ray</h2>
+              </div>
+              <p className={styles.panelHint}>Use a clear AP or lateral view for best results.</p>
+            </div>
+
             <ImageUploader onFileChange={(file) => handleFile(file)} onPredict={(file) => handlePredict(file)} preview={preview} loading={loading} />
-            <div className={styles.info}><strong>How it works:</strong> The app sends the uploaded image to the FastAPI backend. The model was trained to detect bone fractures — results are for research/demo only.</div>
+
+            <div className={styles.infoBox}>
+              <strong>How it works:</strong> The app sends the uploaded image to the FastAPI backend. The model was trained to
+              detect bone fractures, and the response includes both a prediction and a Grad-CAM explanation.
+            </div>
           </section>
 
-          <aside>
-            <div className={styles.rightCard}>
-              <h2 style={{ marginTop: 0, marginBottom: 12 }}>Prediction</h2>
-              {loading && <div style={{ color: '#9ca3af' }}>Running model...</div>}
-              {!loading && result && (<StatusCard prediction={result.prediction} confidence={result.confidence} />)}
-              {!loading && !result && <div style={{ color: '#9ca3af' }}>No prediction yet</div>}
+          <aside className={styles.sidebar}>
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <p className={styles.panelKicker}>Step 2</p>
+                  <h2 className={styles.panelTitle}>Prediction result</h2>
+                </div>
+                <p className={styles.panelHint}>{loading ? 'Analyzing image…' : result ? 'Ready' : 'Waiting for upload'}</p>
+              </div>
+
+              {loading && <div className={styles.placeholderText}>Running model on the uploaded X-ray…</div>}
+              {!loading && result && <StatusCard prediction={result.prediction} confidence={result.confidence} />}
+              {!loading && !result && <div className={styles.placeholderText}>No prediction yet. Upload an image to begin.</div>}
             </div>
-            <div className={styles.notes}>
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>Notes</div>
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                <li>Use high-quality X‑rays for better accuracy.</li>
-                <li>Model outputs a probability — consult clinicians.</li>
+
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <p className={styles.panelKicker}>Step 3</p>
+                  <h2 className={styles.panelTitle}>Grad-CAM view</h2>
+                </div>
+                <p className={styles.panelHint}>Heatmap overlay from the final convolutional block.</p>
+              </div>
+
+              <PredictionVisuals
+                originalImage={preview}
+                gradCamImage={result?.gradCamImage ?? null}
+                loading={loading}
+              />
+            </div>
+
+            <div className={styles.panelSoft}>
+              <div className={styles.panelTitleSmall}>Clinical notes</div>
+              <ul className={styles.noteList}>
+                <li>High-quality X-rays improve accuracy.</li>
+                <li>Grad-CAM is an explanation aid, not a diagnosis.</li>
               </ul>
             </div>
           </aside>

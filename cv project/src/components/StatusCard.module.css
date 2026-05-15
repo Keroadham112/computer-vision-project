@@ -1,20 +1,25 @@
 .card {
-  padding: 16px;
-  border-radius: 14px;
+  padding: 18px;
+  border-radius: 18px;
   color: #fff;
-  box-shadow: 0 12px 40px rgba(2,6,23,0.6);
-  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 16px 42px rgba(2,6,23,0.42);
+  border: 1px solid rgba(255,255,255,0.04);
   background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
 }
 
 .title {
   color: #e6edf3;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
 }
 
 .label {
-  font-size: 1.6rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 800;
+  line-height: 1.08;
+  margin-top: 4px;
 }
 
 .confidence {
@@ -24,10 +29,10 @@
 .barWrap {
   width: 100%;
   background: rgba(148,163,184,0.06);
-  height: 10px;
+  height: 12px;
   border-radius: 999px;
   overflow: hidden;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .barInner {
@@ -36,7 +41,8 @@
 }
 
 .note {
-  margin-top: 10px;
+  margin-top: 12px;
   color: #cbd5e1;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
 }

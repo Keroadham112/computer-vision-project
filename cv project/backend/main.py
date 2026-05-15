@@ -1,12 +1,16 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import base64
+import io
+import logging
+import os
+from pathlib import Path
+from typing import Optional
+
 import numpy as np
 from PIL import Image
-import io
 import tensorflow as tf
-import os
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,10 +40,15 @@ app.add_middleware(
 class PredictionResponse(BaseModel):
     prediction: str
     confidence: float
+    grad_cam_image: Optional[str] = None
+    grad_cam_layer: Optional[str] = None
 
 
 # Global model
 model = None
+last_conv_layer = None
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+MODEL_PATH = PROJECT_ROOT / 'fracture_model.h5'
 
 
 def infer_class_labels():
@@ -70,13 +79,32 @@ def infer_class_labels():
 CLASS_LABELS = infer_class_labels()
 
 
+def iter_layers(layer):
+    """Yield nested layers recursively so Grad-CAM can find MobileNetV2 blocks."""
+    for child in getattr(layer, 'layers', []):
+        yield child
+        yield from iter_layers(child)
+
+
+def find_last_conv_layer(model_obj):
+    """Return the last layer with a 4D output tensor."""
+    last_layer = None
+    for layer in iter_layers(model_obj):
+        try:
+            output_shape = layer.output.shape
+            if len(output_shape) == 4:
+                last_layer = layer
+        except Exception:
+            continue
+    return last_layer
+
+
 @app.on_event('startup')
 async def load_model_on_startup():
-    global model
+    global model, last_conv_layer
     try:
-        model_path = 'fracture_model.h5'
-        if not os.path.exists(model_path):
-            logger.warning(f"⚠ Model file not found at {model_path}")
+        if not MODEL_PATH.exists():
+            logger.warning(f"⚠ Model file not found at {MODEL_PATH}")
             logger.info("Using dummy model for demo")
             model = tf.keras.Sequential([
                 tf.keras.layers.InputLayer(input_shape=(224, 224, 3)),
@@ -84,23 +112,137 @@ async def load_model_on_startup():
                 tf.keras.layers.Dense(1, activation='sigmoid')
             ])
         else:
-            model = tf.keras.models.load_model(model_path)
-            logger.info(f"✓ Model loaded from {model_path}")
+            model = tf.keras.models.load_model(MODEL_PATH)
+            logger.info(f"✓ Model loaded from {MODEL_PATH}")
+        last_conv_layer = find_last_conv_layer(model)
+        if last_conv_layer is not None:
+            logger.info(f"✓ Grad-CAM last conv layer: {last_conv_layer.name}")
+        else:
+            logger.warning("⚠ Could not find a convolutional layer for Grad-CAM")
     except Exception as e:
         logger.error(f"Error loading model: {e}")
         raise
 
 
-def preprocess_image(image_bytes: bytes) -> np.ndarray:
+def get_model_input_size():
+    """Infer the model's expected spatial input size."""
+    if model is None:
+        return 224, 224
+
+    input_shape = model.input_shape
+    if isinstance(input_shape, list):
+        input_shape = input_shape[0]
+
+    if input_shape and len(input_shape) >= 3 and input_shape[1] and input_shape[2]:
+        return int(input_shape[1]), int(input_shape[2])
+
+    return 224, 224
+
+
+def preprocess_image(image_bytes: bytes, target_size=None) -> np.ndarray:
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        img = img.resize((224, 224), Image.Resampling.LANCZOS)
+        if target_size is None:
+            target_size = get_model_input_size()
+        img = img.resize(target_size, Image.Resampling.LANCZOS)
         arr = np.array(img, dtype='float32') / 255.0
-        arr = np.expand_dims(arr, axis=0)
-        return arr
+        return np.expand_dims(arr, axis=0)
     except Exception as e:
         logger.error(f"Error preprocessing image: {e}")
         raise
+
+
+def sigmoid_label_score(probability: float, predicted_class: int) -> float:
+    """Score used for Grad-CAM when the model outputs a single sigmoid probability."""
+    return probability if predicted_class == 1 else 1.0 - probability
+
+
+def jet_colormap(heatmap: np.ndarray) -> np.ndarray:
+    """Create a jet-style RGB heatmap without extra dependencies."""
+    heatmap = np.clip(heatmap, 0.0, 1.0)
+    red = np.clip(1.5 - np.abs(4.0 * heatmap - 3.0), 0.0, 1.0)
+    green = np.clip(1.5 - np.abs(4.0 * heatmap - 2.0), 0.0, 1.0)
+    blue = np.clip(1.5 - np.abs(4.0 * heatmap - 1.0), 0.0, 1.0)
+    return np.stack([red, green, blue], axis=-1)
+
+
+def normalize_label(label: str) -> str:
+    """Convert raw directory labels into the frontend-friendly display labels."""
+    cleaned = label.strip().lower()
+    if cleaned == 'fractured':
+        return 'Fractured'
+    if cleaned == 'not fractured':
+        return 'Not Fractured'
+    return label.strip().title()
+
+
+def encode_pil_to_data_uri(image: Image.Image) -> str:
+    buffer = io.BytesIO()
+    image.save(buffer, format='PNG')
+    encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    return f'data:image/png;base64,{encoded}'
+
+
+def create_grad_cam(image_bytes: bytes, predicted_class: int) -> Optional[str]:
+    """Generate a Grad-CAM overlay image as a base64 data URI."""
+    if model is None or last_conv_layer is None:
+        return None
+
+    try:
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        original_size = image.size
+        input_image = preprocess_image(image_bytes)
+
+        backbone = next((layer for layer in model.layers if isinstance(layer, tf.keras.Model)), None)
+        if backbone is None:
+            return None
+
+        x = backbone.output
+        for layer in model.layers[1:]:
+            x = layer(x)
+
+        grad_model = tf.keras.models.Model(
+            inputs=backbone.input,
+            outputs=[last_conv_layer.output, x],
+        )
+
+        with tf.GradientTape() as tape:
+            conv_outputs, predictions = grad_model(input_image)
+            if predictions.shape[-1] == 1:
+                class_score = predictions[:, 0]
+                if predicted_class == 0:
+                    class_score = 1.0 - class_score
+            else:
+                class_score = predictions[:, predicted_class]
+
+        gradients = tape.gradient(class_score, conv_outputs)
+        if gradients is None:
+            return None
+
+        pooled_gradients = tf.reduce_mean(gradients, axis=(0, 1, 2))
+        conv_outputs = conv_outputs[0]
+        heatmap = tf.reduce_sum(conv_outputs * pooled_gradients, axis=-1)
+        heatmap = tf.maximum(heatmap, 0)
+
+        max_value = tf.reduce_max(heatmap)
+        if float(max_value) == 0.0:
+            return None
+
+        heatmap = heatmap / (max_value + tf.keras.backend.epsilon())
+        heatmap = heatmap.numpy()
+
+        heatmap_image = Image.fromarray(np.uint8(255 * heatmap)).resize(original_size, Image.Resampling.BILINEAR)
+        heatmap_array = np.array(heatmap_image, dtype='float32') / 255.0
+        colored_heatmap = jet_colormap(heatmap_array)
+
+        original_array = np.array(image, dtype='float32') / 255.0
+        overlay = np.clip((0.58 * original_array) + (0.42 * colored_heatmap), 0.0, 1.0)
+        overlay_image = Image.fromarray(np.uint8(overlay * 255.0))
+        return encode_pil_to_data_uri(overlay_image)
+
+    except Exception as e:
+        logger.error(f"Error generating Grad-CAM: {e}")
+        return None
 
 
 @app.get('/health')
@@ -108,7 +250,8 @@ async def health_check():
     return {
         'status': 'ok',
         'model_loaded': model is not None,
-        'class_labels': CLASS_LABELS
+        'class_labels': CLASS_LABELS,
+        'grad_cam_layer': last_conv_layer.name if last_conv_layer is not None else None,
     }
 
 
@@ -122,6 +265,7 @@ async def model_info():
         'output_shape': model.output_shape,
         'class_labels': CLASS_LABELS,
         'class_mapping': {'0': CLASS_LABELS[0], '1': CLASS_LABELS[1]},
+        'grad_cam_layer': last_conv_layer.name if last_conv_layer is not None else None,
         'note': 'Classes sorted alphabetically from training directory'
     }
 
@@ -151,17 +295,24 @@ async def predict(file: UploadFile = File(...)):
             else:
                 predicted_class = 0
                 confidence = round((1 - prob) * 100.0, 1)
-            label = CLASS_LABELS[predicted_class]
+            label = normalize_label(CLASS_LABELS[predicted_class])
             logger.info(f"Sigmoid {prob:.4f} → {label} ({confidence}%)")
         else:
             # Softmax: argmax of class probabilities
             class_probs = preds[0]
             predicted_class = int(np.argmax(class_probs))
             confidence = round(class_probs[predicted_class] * 100.0, 1)
-            label = CLASS_LABELS[predicted_class]
+            label = normalize_label(CLASS_LABELS[predicted_class])
             logger.info(f"Softmax → {label} ({confidence}%)")
+
+        grad_cam_image = create_grad_cam(contents, predicted_class)
         
-        return PredictionResponse(prediction=label, confidence=confidence)
+        return PredictionResponse(
+            prediction=label,
+            confidence=confidence,
+            grad_cam_image=grad_cam_image,
+            grad_cam_layer=last_conv_layer.name if last_conv_layer is not None else None,
+        )
     
     except HTTPException:
         raise

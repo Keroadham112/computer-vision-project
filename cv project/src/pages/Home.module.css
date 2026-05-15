@@ -1,71 +1,188 @@
 .page {
   min-height: 100vh;
-  padding: 32px;
-  background: linear-gradient(180deg,#0b1220 0%, #05060a 100%);
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 26%),
+    linear-gradient(180deg, #0b1220 0%, #05060a 100%);
   color: #e6eef8;
+  position: relative;
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
 }
 
-.header {
+.hero {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 26px;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.6px;
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+  margin: 0;
 }
 
 .subtitle {
   color: #9ca3af;
-  margin-top: 4px;
+  margin: 10px 0 0;
+  max-width: 68ch;
+  line-height: 1.6;
 }
 
-.grid {
+.eyebrow {
+  margin: 0 0 10px;
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heroMeta {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: min(100%, 480px);
+}
+
+.metaCard {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(9, 14, 25, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  box-shadow: 0 18px 35px rgba(2, 6, 23, 0.3);
+}
+
+.metaLabel {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+  gap: 22px;
   align-items: start;
 }
 
-.leftCard {
-  padding: 18px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(148,163,184,0.04);
+.sidebar {
+  display: grid;
+  gap: 18px;
 }
 
-.info {
-  margin-top: 14px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.01);
+.panel,
+.panelSoft {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid rgba(148,163,184,0.06);
+  box-shadow: 0 20px 45px rgba(2, 6, 23, 0.3);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panelKicker {
+  margin: 0 0 6px;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+
+.panelTitleSmall {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.panelHint {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.infoBox {
+  margin-top: 2px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(7, 12, 20, 0.65);
   color: #b8c2d6;
+  line-height: 1.65;
+  border: 1px solid rgba(148, 163, 184, 0.08);
 }
 
-.rightCard {
-  padding: 18px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(148,163,184,0.04);
+.panelSoft {
+  padding: 18px 20px;
 }
 
-.notes {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.01);
+.placeholderText {
+  color: #94a3b8;
+  line-height: 1.65;
+  min-height: 42px;
+}
+
+.noteList {
+  margin: 0;
+  padding-left: 18px;
   color: #9ca3af;
+  line-height: 1.65;
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+@media (max-width: 1100px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .heroMeta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .panelHint {
+    text-align: left;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 18px;
+  }
+
+  .heroMeta {
+    grid-template-columns: 1fr;
+  }
 }

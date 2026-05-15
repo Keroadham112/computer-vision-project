@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🩻 AI-Powered Fracture Detection System
 
 An end-to-end AI medical imaging project for detecting bone fractures from X-ray images using Deep Learning.
@@ -199,3 +200,6 @@ Kerolos Adham
 
 GitHub:
 https://github.com/Keroadham112
+=======
+# computer-vision-project
+>>>>>>> a903a21 (Added Grad-CAM visualization and UI improvements)

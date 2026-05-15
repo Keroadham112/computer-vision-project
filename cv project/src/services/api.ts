@@ -14,6 +14,8 @@ export async function predictImage(form: FormData): Promise<PredictionResponse> 
   return {
     prediction: data.prediction,
     confidence: Number(data.confidence),
+    gradCamImage: data.grad_cam_image ?? null,
+    gradCamLayer: data.grad_cam_layer ?? null,
   }
 }
 
